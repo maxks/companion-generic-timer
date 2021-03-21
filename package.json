@@ -1,0 +1,16 @@
+{
+	"name": "generic-timer",
+	"version": "1.0.0",
+	"api_version": "1.0.0",
+	"keywords": ["Timer"],
+	"manufacturer": "Generic",
+	"product": ["Timer"],
+	"shortname": "TI",
+	"description" : "Generic Timer module for Companion",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Max Kiusso",
+	"license": "MIT"
+}
