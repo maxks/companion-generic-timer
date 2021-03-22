@@ -1,6 +1,14 @@
 module.exports = {
 	getFeedbacks : function(i) {
+		var self = this
 		var feedbacks = {}
+
+		let ele = []
+		for (let k of self.getAllActions()) {
+			if (k.action == 'countdown') {
+				ele.push({label: k.options.name, id: k.options.name})
+			}
+		}
 
 		feedbacks['countdown'] = {
 			label: `Countdown`,
@@ -17,12 +25,11 @@ module.exports = {
 					id: 'bg',
 					default: this.rgb(0,0,0),
 				},{
-					type:	'textinput',
+					type:	'dropdown',
 					label:	'Name (same as action)',
-					description: 'Same as cuntdown action name',
 					id:		'name',
-					default:	'',
-					regex:	'/^[^\\s]{3,}$/',
+					default:	[],
+					choices:	ele,
 				},{
 					type:	'textinput',
 					label:	'Time (h:mm:ss)',
@@ -37,6 +44,13 @@ module.exports = {
 					bank
 				)
 			},
+		}
+
+		ele = []
+		for (let k of self.getAllActions()) {
+			if (k.action == 'stopwatch') {
+				ele.push({label: k.options.name, id: k.options.name})
+			}
 		}
 
 		feedbacks['stopwatch'] = {
@@ -54,12 +68,11 @@ module.exports = {
 					id: 'bg',
 					default: this.rgb(0,0,0),
 				},{
-					type:	'textinput',
+					type:	'dropdown',
 					label:	'Name (same as action)',
-					description: 'Same as stopwatch action name',
 					id:		'name',
-					default:	'',
-					regex:	'/^[^\\s]{3,}$/',
+					default:	[],
+					choices:	ele,
 				},{
 					type:	'textinput',
 					label:	'Time (h:mm:ss)',
@@ -82,8 +95,10 @@ module.exports = {
 	feedbackStatus : function(feedback, bank) {
 		var ret = {}
 		let d, c
+		let nam = feedback.type == 'countdown' ? 'count' : 'stop'
+
 		var tm
-		this.getVariable(`time_${feedback.options.name}`, function(res){
+		this.getVariable(`${nam}_${feedback.options.name}`, function(res){
 			tm = res
 		})
 
@@ -93,12 +108,15 @@ module.exports = {
 		[h, m, s] = feedback.options.time.split(":")
 		c = new Date((((h-1)*60*60*1000) + (m*60*1000) + (s*1000)));
 
-		if ( (d <= c && feedback.type == 'countdown') || (d >= c && feedback.type == 'stopwatch') ) {
+		let ck = this.continue[`${nam}_${feedback.options.name}`] || false
+		let vr = this.varStatus[`${nam}_${feedback.options.name}`] || 0
+
+		if ( ((d <= c && nam == 'count') || (d >= c && nam == 'stop') || ck) && vr > 0 ) {
 			ret = {
 				color: feedback.options.fg,
 				bgcolor: feedback.options.bg
 			}
-		} else if (this.varStatus[`time_${feedback.options.name}`] == 0) {
+		} else if (vr == 0) {
 			ret = {
 				color: bank.color,
 				bgcolor: bank.bgcolor

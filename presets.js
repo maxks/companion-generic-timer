@@ -3,13 +3,13 @@ module.exports = {
 		var presets = []
 		var self = this
 
-		for (let i = 1; i <= 10; i++) {
+		for(let k of this.config.countdown.split(";")) {
 			let pst = {
 				category: 'Countdown',
-				label: `CountDown ${i}`,
+				label: `CountDown ${k}`,
 				bank: {
 					style: 'text',
-					text: `CDown ${i}\\n\\n\$(TI:time_cd${i})`,
+					text: `${k}\\n\\n\$(TI:count_${k})`,
 					size: 'auto',
 					color: self.rgb(255, 255, 255),
 					bgcolor: self.rgb(0, 0, 0),
@@ -19,7 +19,7 @@ module.exports = {
 					{
 						action: 'countdown',
 						options: {
-							name: `cd${i}`,
+							name: `${k}`,
 							time: '0:10:00',
 							func: 1,
 						}
@@ -31,7 +31,7 @@ module.exports = {
 						options: {
 							fg: this.rgb(0,0,0),
 							bg: this.rgb(255,255,0),
-							name: `cd${i}`,
+							name: `${k}`,
 							time: '0:05:00',
 						}
 					},{
@@ -39,7 +39,7 @@ module.exports = {
 						options: {
 							fg: this.rgb(255,255,255),
 							bg: this.rgb(255,0,0),
-							name: `cd${i}`,
+							name: `${k}`,
 							time: '0:01:00',
 						}
 					}
@@ -49,13 +49,13 @@ module.exports = {
 			presets.push(pst)
 		}
 
-		for (let i = 1; i <= 10; i++) {
+		for(let k of this.config.stopwatch.split(";")) {
 			let pst = {
 				category: 'Stopwatch',
-				label: `Stopwatch ${i}`,
+				label: `Stopwatch ${k}`,
 				bank: {
 					style: 'text',
-					text: `SWatch ${i}\\n\\n\$(TI:time_sw${i})`,
+					text: `${k}\\n\\n\$(TI:stop_${k})`,
 					size: 'auto',
 					color: self.rgb(255, 255, 255),
 					bgcolor: self.rgb(0, 0, 0),
@@ -65,7 +65,7 @@ module.exports = {
 					{
 						action: 'stopwatch',
 						options: {
-							name: `sw${i}`,
+							name: `${k}`,
 							func: 1,
 						}
 					}
@@ -76,7 +76,7 @@ module.exports = {
 						options: {
 							fg: this.rgb(255,255,255),
 							bg: this.rgb(255,0,0),
-							name: `sw${i}`,
+							name: `${k}`,
 							time: '0:10:00',
 						}
 					}

@@ -12,6 +12,7 @@
  let actions         = require('./actions')
  let feedbacks       = require('./feedbacks')
  let presets	      = require('./presets')
+ let variables	      = require('./variables')
 
  class instance extends instance_skel {
  	constructor(system, id, config) {
@@ -21,10 +22,12 @@
  			...actions,
  			...feedbacks,
 			...presets,
+			...variables,
  		})
 
 		this.varStatus = {}
 		this.intVal = {}
+		this.continue = {}
  	}
 
 	actions(system) {
@@ -39,51 +42,54 @@
 		this.setPresetDefinitions(this.getPresets())
 	}
 
+	variables(system) {
+		this.setVariableDefinitions(this.getVariables())
+	}
+
 	action(action) {
 		var self = this
 		var opt = action.options
 		var stp = 1
-		if ( opt.time === undefined) {
-			opt.time = '0:00:00'
-		}
+		var nam = 'stop'
 
 		switch (action.action) {
 			case 'countdown':
 				stp = -1
+				nam = 'count'
 			case 'stopwatch':
-			case 'countdown':
-				if (self.varStatus[`time_${opt.name}`] === undefined) {
-					self.varStatus[`time_${opt.name}`] = 0
-					self.setVariable(`time_${opt.name}`, opt.time)
-					break
-				}
-
-				switch (self.varStatus[`time_${opt.name}`]) {
+				switch (self.varStatus[`${nam}_${opt.name}`]) {
 					case 1:
 						if (opt.func == 0) {
-							self.varStatus[`time_${opt.name}`] = 0
+							self.varStatus[`${nam}_${opt.name}`] = 0
 						} else {
-							self.varStatus[`time_${opt.name}`] = 2
+							self.varStatus[`${nam}_${opt.name}`] = 2
 						}
 
-						if (self.intVal[`time_${opt.name}`] !== undefined) {
-							clearInterval(self.intVal[`time_${opt.name}`])
+						if (self.intVal[`${nam}_${opt.name}`] !== undefined) {
+							clearInterval(self.intVal[`${nam}_${opt.name}`])
 						}
 						break
 
 					case 2:
-						self.setVariable(`time_${opt.name}`, opt.time)
-						self.varStatus[`time_${opt.name}`] = 0
+						self.setVariable(`${nam}_${opt.name}`, opt.time)
+						self.varStatus[`${nam}_${opt.name}`] = 0
+						self.continue[`${nam}_${opt.name}`] = false
 						self.checkFeedbacks(action.action)
 						break
 
 					case 0:
-						self.varStatus[`time_${opt.name}`] = 1
-						self.intVal[`time_${opt.name}`] = setInterval(
+						self.varStatus[`${nam}_${opt.name}`] = 1
+						self.intVal[`${nam}_${opt.name}`] = setInterval(
 							() => {
+								let f = ''
+								if (self.continue[`${nam}_${opt.name}`] == true) {
+									f = "+"
+									stp = 1
+								}
+
 								let d
 								var tm
-								self.getVariable(`time_${opt.name}`, function(res){
+								self.getVariable(`${nam}_${opt.name}`, function(res){
 									tm = res
 								})
 								let [h, m, s] = tm.split(":")
@@ -92,11 +98,14 @@
 								m = ('0' + d.getMinutes().toString()).slice(-2)
 								s = ('0' + d.getSeconds().toString()).slice(-2)
 
-								self.setVariable(`time_${opt.name}`, `${h}:${m}:${s}`)
+								self.setVariable(`${nam}_${opt.name}`, `${f}${h}:${m}:${s}`)
 								self.checkFeedbacks(action.action)
-								if (h == 0 && m == 0 && s == 0) {
-									self.varStatus[`time_${opt.name}`] = undefined
-									clearInterval(self.intVal[`time_${opt.name}`])
+
+								if (h == 0 && m == 0 && s == 0 && (nam == 'stop' || (nam == 'count' && opt.end == 0))) {
+									self.varStatus[`${nam}_${opt.name}`] = undefined
+									clearInterval(self.intVal[`${nam}_${opt.name}`])
+								} else if (h == 0 && m == 0 && s == 0 && nam == 'count' && opt.end == 1) {
+									self.continue[`${nam}_${opt.name}`] = true
 								}
 							},
 							1000
@@ -115,12 +124,27 @@
 				width: 12,
 				label: 'Information',
 				value: 'This module is for Generic Timer',
+			},{
+				type:	'textinput',
+				label:	'Countdown names (semicolumn separated)',
+				id:		'countdown',
+				default:	'count1;count2;count3',
+				regex:	'/^([^\\s]{3,}\\;?){1,}$/',
+			},{
+				type:	'textinput',
+				label:	'Stopwatch names (semicolumn separated)',
+				id:		'stopwatch',
+				default:	'stop1;stop2;stop3',
+				regex:	'/^([^\\s]{3,}\\;?){1,}$/',
 			},
 		]
 	}
 
 	destroy() {
 		this.log('debug', `destroyed ${this.id}`)
+		for(var k in this.intVal) {
+			clearInterval(k);
+		}
 	}
 
 	init() {
@@ -132,6 +156,10 @@
 		this.actions()
 		this.feedbacks()
 		this.presets()
+		this.variables()
+
+		this.subscribeActions('countdown');
+		this.subscribeActions('stopwatch');
 	}
 }
 exports = module.exports = instance
